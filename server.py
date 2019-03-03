@@ -1,12 +1,25 @@
 from flask import Flask, request, redirect, url_for, send_from_directory, render_template, Response
 import time
 import os
+import pyrebase
+ 
+config = {
+  'apiKey': "AIzaSyArDmVdmj8maZuih3SYCYosI4pCVq_my6g",
+  'authDomain': "altrix-fc7d2.firebaseapp.com",
+  'databaseURL': "https://altrix-fc7d2.firebaseio.com",
+  'projectId': "altrix-fc7d2",
+  'storageBucket': "altrix-fc7d2.appspot.com",
+  'messagingSenderId': "698495361145"
+}
+
+firebase = pyrebase.initialize_app(config)
+
+db = firebase.database()
+
+# # In[16]:
 
 
-# In[16]:
-
-
-from nltk.tokenize import word_tokenize
+# from nltk.tokenize import word_tokenize
 
 # Setup Flask app.
 app = Flask(__name__)
@@ -91,26 +104,83 @@ def downloadComplete():
   with open('result.json', 'w') as fp:
       json.dump(output, fp)
 
-  # In[47]:
+
+def predict(data):
+  import pandas as pd
+  import numpy as np
+  from sklearn import preprocessing
+  from sklearn.linear_model import LogisticRegression
+  from sklearn.model_selection import train_test_split
+  data1 = pd.read_csv('./Training.csv')
+  data = data[1:-1]
+  a = np.array([])
+  for ix in range(len(data)):
+    a = np.append(a,ord(data[ix])-48)
+  x = data1.values
+  X = x[:,:-1]
+  X = X[:,20:40]
+  Y = x[:,-1]
+  le = preprocessing.LabelEncoder()
+  le.fit(Y)
+  Y = le.transform(Y)
+  Y.shape
+
+  X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2)
+  lr = LogisticRegression(solver='lbfgs', multi_class='multinomial')
+  lr.fit(X_train,Y_train)
+  y_pred = lr.predict(a.reshape(1,-1))
+  Y_pred = le.inverse_transform(y_pred)
+  user = db.child("Prediction").child('data',Y_pred[0])
+  return Y_pred[0]
 
 
+# def ocr1():
+#   import re
+#   import sys
+#   import pytesseract
+#   from PIL import Image, ImageEnhance, ImageFilter
+#   import cv2
+#   import os
+#   from io import StringIO
+#   from sklearn.feature_extraction.text import CountVectorizer,TfidfVectorizer
+#   from sklearn.decomposition import LatentDirichletAllocation
+#   import pandas as pd
+#   import numpy as np
+#   image = cv2.imread('Screenshot.png')
+#   gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+#   gray = cv2.threshold(gray, 0, 255,cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
+#   filename = "{}.png".format(os.getpid())
+#   cv2.imwrite(filename, gray)
+#   text = pytesseract.image_to_string(Image.open(filename))
+#   os.remove(filename)
+#   clean_cont = text.splitlines()
+#   sent_str = ""
+#   for i in clean_cont:
+#       sent_str += str(i) + " "
+#   sent_str = sent_str[:-1]
+#   from nltk.tokenize import sent_tokenize
+#   clean_cont = sent_tokenize(sent_str)
+#   dubby=[re.sub("[^a-zA-Z]+", " ", s) for s in clean_cont[1:]]
+#   from sklearn.feature_extraction.stop_words import ENGLISH_STOP_WORDS
+#   vect=TfidfVectorizer(ngram_range=(1,1),stop_words='english')
+#   dtm=vect.fit_transform(dubby)
+#   result = dtm.toarray()
+#   a = np.array([])
+#   for ix in range(result.shape[0]):
+#       a=np.append(a,np.sum(result[ix]))
+#   ind = np.argsort(a)
+#   summary = np.array([])
+#   array1 = ind[-2:]
+#   sorted(array1)
+#   for ix in array1:
+#       summary = np.append(summary,dubby[ix])
+#   summary_str = str(clean_cont[0])+ " "
+#   for ix in summary:
+#       summary_str+= str(ix)+" "
+#   device.close()
+#   retstr.close()
+#   return summary_str
 
-
-
-# In[ ]:
-
-
-
-  
-
-
-# In[47]:
-
-
-
-
-
-# In[ ]:
 
 # Routes
 @app.route('/')
@@ -133,10 +203,20 @@ def recordedSample():
   time.sleep(3)
   os.remove('./sound.wav')
   
-
-  # content = get_file('result.json')
-  # return Response(content, mimetype='application/json')
+  user = db.child("Recordings").child('data',result.json)
   return send_from_directory('./', 'result.json')
+
+@app.route('/predicted')
+def Predicted():
+  return render_template('predicted.html')  
+  
+@app.route('/prediction/<string:key>')
+def Prediction(key):
+  return(predict(key))
+
+@app.route('/ocr')
+def OCR():
+  return(ocr1())  
 
 if __name__ == '__main__':
   app.run()

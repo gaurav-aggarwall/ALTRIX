@@ -108,15 +108,10 @@ function createDownloadLink(blob) {
 		  })	
 }
 
-// function aa(){
-//     var json = {
-//         "patient_name": "", "patient_gender": "", "patient_age": "", "patient_address": "Maharaja Agrasen Institute of Technology ", "patient_phone_number": "", "Attendee_name": "", "Attendee_relationship_with_patient": "", "Attendee_phone_number": ""
-// }
-// for(key in json)
-// {
-//   if(json.hasOwnProperty(key))
-//     $('input[id='+key+']').val(json[key]);
-// }
-// }
-
-// aa();
+const ocr = document.getElementById('ocr-call').addEventListener('click', function(){
+	$.get('http://127.0.0.1:5000/ocr', function(data){
+		console.log(data);
+		localStorage.setItem('ocr', data);
+		document.getElementById('formats').innerHTML = data;
+	})
+})
