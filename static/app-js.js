@@ -14,8 +14,6 @@ var stopButton = document.getElementById("stopButton");
 var pauseButton = document.getElementById("pauseButton");
 var sendBtn = document.getElementById("sendBtn");
 var saveSound = document.getElementById('saveSound');
-// const form = document.getElementById('formFill');
-
 
 //add events to those 2 buttons
 recordButton.addEventListener("click", startRecording);

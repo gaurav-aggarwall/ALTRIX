@@ -53,9 +53,6 @@ const submit = document.getElementById('submit').addEventListener('click', ()=> 
         finalArray[CheckedArray[i]-1]=1;
     }
 
-    // url = String(finalArray);
-    // console.log(url)
-    
     const stringVal = JSON.stringify(finalArray.join(''))
     console.log(stringVal)
 
